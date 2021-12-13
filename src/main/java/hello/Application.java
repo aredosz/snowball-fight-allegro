@@ -184,15 +184,15 @@ public class Application {
   private boolean canGoForward(int width, int height, String[][] otherPlayersMap, int myX, int myY, String myDirection) {
     boolean canGoForward = false;
     if (myDirection.equals("N")) {
-      canGoForward = myY - 1 >= 0;
+      canGoForward = myY - 1 >= 0 && !"X".equals(otherPlayersMap[myX][myY-1]);
 
     } else if (myDirection.equals("S")) {
-      canGoForward = myY + 1 <= height - 1;
+      canGoForward = myY + 1 <= height - 1 && !"X".equals(otherPlayersMap[myX][myY+1]);
 
     } else if (myDirection.equals("W")) {
-      canGoForward = myX - 1 >= 0;
+      canGoForward = myX - 1 >= 0 && !"X".equals(otherPlayersMap[myX-1][myY]);
     } else if (myDirection.equals("E")) {
-      canGoForward = myX + 1 <= width + 1;
+      canGoForward = myX + 1 <= width + 1 && !"X".equals(otherPlayersMap[myX+1][myY]);
     }
     return canGoForward;
   }
