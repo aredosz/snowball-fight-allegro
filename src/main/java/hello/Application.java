@@ -192,7 +192,7 @@ public class Application {
     } else if (myDirection.equals("W")) {
       canGoForward = myX - 1 >= 0 && !"X".equals(otherPlayersMap[myX-1][myY]);
     } else if (myDirection.equals("E")) {
-      canGoForward = myX + 1 <= width + 1 && !"X".equals(otherPlayersMap[myX+1][myY]);
+      canGoForward = myX + 1 <= width - 1 && !"X".equals(otherPlayersMap[myX+1][myY]);
     }
     return canGoForward;
   }
