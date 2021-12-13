@@ -117,6 +117,16 @@ public class Application {
     int myX = myPlayerState.x;
     int myY = myPlayerState.y;
     String myDirection = myPlayerState.direction;
+    boolean iWasHit = myPlayerState.wasHit;
+
+    if (iWasHit && canGoForward(width, height, otherPlayersMap, myX, myY, myDirection)) {
+      System.out.println("I was hitted! Return F");
+      return "F";
+    } else if (iWasHit) {
+      String hitNextAction = getNextAction();
+      System.out.println("I was hitted! Return " + hitNextAction);
+      return hitNextAction;
+    }
 
     if (canThrow(width, height, otherPlayersMap, myX, myY, myDirection)) {
       System.out.println("Return T");
