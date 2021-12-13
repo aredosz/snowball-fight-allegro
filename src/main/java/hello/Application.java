@@ -105,12 +105,11 @@ public class Application {
       return "T";
     }
 
-    boolean catGoForward = false;
+    if (canGoForward(width, height, otherPlayersMap, myX, myY, myDirection)) {
+      return "F";
+    }
 
-
-    String currentAction = getNextAction();
-
-    return currentAction;
+    return getNextAction();
   }
 
   private boolean canThrow(int width, int height, String[][] otherPlayersMap, int myX, int myY, String myDirection) {
@@ -132,16 +131,16 @@ public class Application {
               || (checkY_3 >= 0 && checkY_3 < height && "X".equals(otherPlayersMap[myX][checkY_3]));
 
     } else if (myDirection.equals("W")) {
-      int checkX_1 = myY - 1;
-      int checkX_2 = myY - 2;
-      int checkX_3 = myY - 3;
+      int checkX_1 = myX - 1;
+      int checkX_2 = myX - 2;
+      int checkX_3 = myX - 3;
       canThrow = (checkX_1 >= 0 && checkX_1 < width && "X".equals(otherPlayersMap[checkX_1][myY]))
               || (checkX_2 >= 0 && checkX_2 < width && "X".equals(otherPlayersMap[checkX_2][myY]))
               || (checkX_3 >= 0 && checkX_3 < width && "X".equals(otherPlayersMap[checkX_3][myY]));
-    } else if (myDirection == "E") {
-      int checkX_1 = myY + 1;
-      int checkX_2 = myY + 2;
-      int checkX_3 = myY + 3;
+    } else if (myDirection.equals("E")) {
+      int checkX_1 = myX + 1;
+      int checkX_2 = myX + 2;
+      int checkX_3 = myX + 3;
       canThrow = (checkX_1 >= 0 && checkX_1 < width && "X".equals(otherPlayersMap[checkX_1][myY]))
               || (checkX_2 >= 0 && checkX_2 < width && "X".equals(otherPlayersMap[checkX_2][myY]))
               || (checkX_3 >= 0 && checkX_3 < width && "X".equals(otherPlayersMap[checkX_3][myY]));
@@ -149,13 +148,29 @@ public class Application {
     return canThrow;
   }
 
+  private boolean canGoForward(int width, int height, String[][] otherPlayersMap, int myX, int myY, String myDirection) {
+    boolean canGoForward = false;
+    if (myDirection.equals("N")) {
+      canGoForward = myY - 1 >= 0;
+
+    } else if (myDirection.equals("S")) {
+      canGoForward = myY + 1 <= height;
+
+    } else if (myDirection.equals("W")) {
+      canGoForward = myX - 1 >= 0;
+    } else if (myDirection.equals("E")) {
+      canGoForward = myX + 1 <= width;
+    }
+    return canGoForward;
+  }
+
   private String getMyPlayer(ArenaUpdate arenaUpdate) {
     return arenaUpdate._links.self.href;
   }
 
   private String getNextAction() {
-    String[] commands = new String[]{"F", "R", "L"};
-    int i = new Random().nextInt(3);
+    String[] commands = new String[]{"R", "L"};
+    int i = new Random().nextInt(2);
     return commands[i];
   }
 
