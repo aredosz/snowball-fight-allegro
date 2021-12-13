@@ -41,6 +41,17 @@ public class Application {
     public String direction;
     public Boolean wasHit;
     public Integer score;
+
+    @Override
+    public String toString() {
+      return new StringJoiner(", ", PlayerState.class.getSimpleName() + "[", "]")
+              .add("x=" + x)
+              .add("y=" + y)
+              .add("direction='" + direction + "'")
+              .add("wasHit=" + wasHit)
+              .add("score=" + score)
+              .toString();
+    }
   }
 
   static class Arena {
@@ -69,12 +80,14 @@ public class Application {
 
   @PostMapping("/**")
   public String index(@RequestBody ArenaUpdate arenaUpdate) {
-    System.out.println(arenaUpdate);
+//    System.out.println(arenaUpdate);
 //    writeCommittedStream.send(arenaUpdate.arena);
 
     String myPlayer = getMyPlayer(arenaUpdate);
     int width = arenaUpdate.arena.dims.get(0);
     int height = arenaUpdate.arena.dims.get(1);
+
+    System.out.println("Arena size: width=" + width + ", height=" + height);
 
     String[][] otherPlayersMap = new String[width][height];
     List<String> collectedPlayers = arenaUpdate.arena.state.entrySet().stream()
@@ -93,7 +106,11 @@ public class Application {
             .findFirst()
             .orElse(null);
 
+    System.out.println("My player state:");
+    System.out.println(myPlayerState);
+
     if (myPlayerState == null) {
+      System.out.println("Return T");
       return "T";
     }
 
@@ -102,14 +119,20 @@ public class Application {
     String myDirection = myPlayerState.direction;
 
     if (canThrow(width, height, otherPlayersMap, myX, myY, myDirection)) {
+      System.out.println("Return T");
       return "T";
     }
 
     if (canGoForward(width, height, otherPlayersMap, myX, myY, myDirection)) {
+      System.out.println("Return F");
       return "F";
     }
 
-    return getNextAction();
+    String nextAction = getNextAction();
+
+    System.out.println("Return " + nextAction);
+
+    return nextAction;
   }
 
   private boolean canThrow(int width, int height, String[][] otherPlayersMap, int myX, int myY, String myDirection) {
