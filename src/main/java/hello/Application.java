@@ -8,12 +8,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.StringJoiner;
 
 @SpringBootApplication
 @RestController
 public class Application {
 
-    private String prevAction;
+  private String prevAction;
 
   static class Self {
     public String href;
@@ -58,23 +59,35 @@ public class Application {
   @PostMapping("/**")
   public String index(@RequestBody ArenaUpdate arenaUpdate) {
     System.out.println(arenaUpdate);
+
+    String myPlayer = getMyPlayer(arenaUpdate);
+
+    String currentAction = getNextAction();
+
+    return currentAction;
+  }
+
+  private String getMyPlayer(ArenaUpdate arenaUpdate) {
+    return arenaUpdate._links.self.href;
+  }
+
+  private String getNextAction() {
     String[] commands = new String[]{"F", "R", "L", "T"};
     int i = new Random().nextInt(4);
-    
     String currentAction = commands[i];
-    
+
     if (prevAction != "T" && currentAction != "T") {
-        return "T";
+      return "T";
     }
 
     if (prevAction == "T" && currentAction == "T") {
-        i = new Random().nextInt(4);
-        currentAction = commands[i];
+      i = new Random().nextInt(4);
+      currentAction = commands[i];
     }
 
     prevAction = currentAction;
 
-    return commands[i];
+    return currentAction;
   }
 
 }
