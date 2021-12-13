@@ -70,7 +70,7 @@ public class Application {
   @PostMapping("/**")
   public String index(@RequestBody ArenaUpdate arenaUpdate) {
     System.out.println(arenaUpdate);
-    writeCommittedStream.send(arenaUpdate.arena);
+//    writeCommittedStream.send(arenaUpdate.arena);
 
     String myPlayer = getMyPlayer(arenaUpdate);
     int width = arenaUpdate.arena.dims.get(0);
@@ -115,36 +115,36 @@ public class Application {
 
   private boolean canThrow(int width, int height, String[][] otherPlayersMap, int myX, int myY, String myDirection) {
     boolean canThrow = false;
-    if (myDirection == "N") {
+    if (myDirection.equals("N")) {
       int checkY_1 = myY - 1;
       int checkY_2 = myY - 2;
       int checkY_3 = myY - 3;
-      canThrow = (checkY_1 >= 0 && checkY_1 < height && otherPlayersMap[myX][checkY_1].equals("X"))
-              || (checkY_2 >= 0 && checkY_2 < height && otherPlayersMap[myX][checkY_2].equals("X"))
-              || (checkY_3 >= 0 && checkY_3 < height && otherPlayersMap[myX][checkY_3].equals("X"));
+      canThrow = (checkY_1 >= 0 && checkY_1 < height && "X".equals(otherPlayersMap[myX][checkY_1]))
+              || (checkY_2 >= 0 && checkY_2 < height && "X".equals(otherPlayersMap[myX][checkY_2]))
+              || (checkY_3 >= 0 && checkY_3 < height && "X".equals(otherPlayersMap[myX][checkY_3]));
 
-    } else if (myDirection == "S") {
+    } else if (myDirection.equals("S")) {
       int checkY_1 = myY + 1;
       int checkY_2 = myY + 2;
       int checkY_3 = myY + 3;
-      canThrow = (checkY_1 >= 0 && checkY_1 < height && otherPlayersMap[myX][checkY_1].equals("X"))
-              || (checkY_2 >= 0 && checkY_2 < height && otherPlayersMap[myX][checkY_2].equals("X"))
-              || (checkY_3 >= 0 && checkY_3 < height && otherPlayersMap[myX][checkY_3].equals("X"));
+      canThrow = (checkY_1 >= 0 && checkY_1 < height && "X".equals(otherPlayersMap[myX][checkY_1]))
+              || (checkY_2 >= 0 && checkY_2 < height && "X".equals(otherPlayersMap[myX][checkY_2]))
+              || (checkY_3 >= 0 && checkY_3 < height && "X".equals(otherPlayersMap[myX][checkY_3]));
 
-    } else if (myDirection == "W") {
+    } else if (myDirection.equals("W")) {
       int checkX_1 = myY - 1;
       int checkX_2 = myY - 2;
       int checkX_3 = myY - 3;
-      canThrow = (checkX_1 >= 0 && checkX_1 < width && otherPlayersMap[checkX_1][myY].equals("X"))
-              || (checkX_2 >= 0 && checkX_2 < width && otherPlayersMap[checkX_2][myY].equals("X"))
-              || (checkX_3 >= 0 && checkX_3 < width && otherPlayersMap[checkX_3][myY].equals("X"));
+      canThrow = (checkX_1 >= 0 && checkX_1 < width && "X".equals(otherPlayersMap[checkX_1][myY]))
+              || (checkX_2 >= 0 && checkX_2 < width && "X".equals(otherPlayersMap[checkX_2][myY]))
+              || (checkX_3 >= 0 && checkX_3 < width && "X".equals(otherPlayersMap[checkX_3][myY]));
     } else if (myDirection == "E") {
       int checkX_1 = myY + 1;
       int checkX_2 = myY + 2;
       int checkX_3 = myY + 3;
-      canThrow = (checkX_1 >= 0 && checkX_1 < width && otherPlayersMap[checkX_1][myY].equals("X"))
-              || (checkX_2 >= 0 && checkX_2 < width && otherPlayersMap[checkX_2][myY].equals("X"))
-              || (checkX_3 >= 0 && checkX_3 < width && otherPlayersMap[checkX_3][myY].equals("X"));
+      canThrow = (checkX_1 >= 0 && checkX_1 < width && "X".equals(otherPlayersMap[checkX_1][myY]))
+              || (checkX_2 >= 0 && checkX_2 < width && "X".equals(otherPlayersMap[checkX_2][myY]))
+              || (checkX_3 >= 0 && checkX_3 < width && "X".equals(otherPlayersMap[checkX_3][myY]));
     }
     return canThrow;
   }
@@ -159,58 +159,58 @@ public class Application {
     return commands[i];
   }
 
-  static class WriteCommittedStream {
-
-    final JsonStreamWriter jsonStreamWriter;
-
-    public WriteCommittedStream(String projectId, String datasetName, String tableName) throws IOException, Descriptors.DescriptorValidationException, InterruptedException {
-
-      try (BigQueryWriteClient client = BigQueryWriteClient.create()) {
-
-        WriteStream stream = WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build();
-        TableName parentTable = TableName.of(projectId, datasetName, tableName);
-        CreateWriteStreamRequest createWriteStreamRequest =
-                CreateWriteStreamRequest.newBuilder()
-                        .setParent(parentTable.toString())
-                        .setWriteStream(stream)
-                        .build();
-
-        WriteStream writeStream = client.createWriteStream(createWriteStreamRequest);
-
-        jsonStreamWriter = JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build();
-      }
-    }
-
-    public ApiFuture<AppendRowsResponse> send(Arena arena) {
-      Instant now = Instant.now();
-      JSONArray jsonArray = new JSONArray();
-
-      arena.state.forEach((url, playerState) -> {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("x", playerState.x);
-        jsonObject.put("y", playerState.y);
-        jsonObject.put("direction", playerState.direction);
-        jsonObject.put("wasHit", playerState.wasHit);
-        jsonObject.put("score", playerState.score);
-        jsonObject.put("player", url);
-        jsonObject.put("timestamp", now.getEpochSecond() * 1000 * 1000);
-        jsonArray.put(jsonObject);
-      });
-
-      return jsonStreamWriter.append(jsonArray);
-    }
-
-  }
-
-  final String projectId = ServiceOptions.getDefaultProjectId();
-  final String datasetName = "snowball";
-  final String tableName = "events";
-
-  final WriteCommittedStream writeCommittedStream;
-
-  public Application() throws Descriptors.DescriptorValidationException, IOException, InterruptedException {
-    writeCommittedStream = new WriteCommittedStream(projectId, datasetName, tableName);
-  }
+//  static class WriteCommittedStream {
+//
+//    final JsonStreamWriter jsonStreamWriter;
+//
+//    public WriteCommittedStream(String projectId, String datasetName, String tableName) throws IOException, Descriptors.DescriptorValidationException, InterruptedException {
+//
+//      try (BigQueryWriteClient client = BigQueryWriteClient.create()) {
+//
+//        WriteStream stream = WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build();
+//        TableName parentTable = TableName.of(projectId, datasetName, tableName);
+//        CreateWriteStreamRequest createWriteStreamRequest =
+//                CreateWriteStreamRequest.newBuilder()
+//                        .setParent(parentTable.toString())
+//                        .setWriteStream(stream)
+//                        .build();
+//
+//        WriteStream writeStream = client.createWriteStream(createWriteStreamRequest);
+//
+//        jsonStreamWriter = JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build();
+//      }
+//    }
+//
+//    public ApiFuture<AppendRowsResponse> send(Arena arena) {
+//      Instant now = Instant.now();
+//      JSONArray jsonArray = new JSONArray();
+//
+//      arena.state.forEach((url, playerState) -> {
+//        JSONObject jsonObject = new JSONObject();
+//        jsonObject.put("x", playerState.x);
+//        jsonObject.put("y", playerState.y);
+//        jsonObject.put("direction", playerState.direction);
+//        jsonObject.put("wasHit", playerState.wasHit);
+//        jsonObject.put("score", playerState.score);
+//        jsonObject.put("player", url);
+//        jsonObject.put("timestamp", now.getEpochSecond() * 1000 * 1000);
+//        jsonArray.put(jsonObject);
+//      });
+//
+//      return jsonStreamWriter.append(jsonArray);
+//    }
+//
+//  }
+//
+//  final String projectId = ServiceOptions.getDefaultProjectId();
+//  final String datasetName = "snowball";
+//  final String tableName = "events";
+//
+//  final WriteCommittedStream writeCommittedStream;
+//
+//  public Application() throws Descriptors.DescriptorValidationException, IOException, InterruptedException {
+//    writeCommittedStream = new WriteCommittedStream(projectId, datasetName, tableName);
+//  }
 
 }
 
