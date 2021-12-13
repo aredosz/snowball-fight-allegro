@@ -187,12 +187,12 @@ public class Application {
       canGoForward = myY - 1 >= 0;
 
     } else if (myDirection.equals("S")) {
-      canGoForward = myY + 1 <= height;
+      canGoForward = myY + 1 <= height - 1;
 
     } else if (myDirection.equals("W")) {
       canGoForward = myX - 1 >= 0;
     } else if (myDirection.equals("E")) {
-      canGoForward = myX + 1 <= width;
+      canGoForward = myX + 1 <= width + 1;
     }
     return canGoForward;
   }
