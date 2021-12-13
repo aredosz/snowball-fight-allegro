@@ -10,6 +10,16 @@ import java.util.Map;
 import java.util.Random;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.ServiceOptions;
+import com.google.cloud.bigquery.storage.v1.*;
+import com.google.protobuf.Descriptors;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.time.Instant;
+
 
 import static java.util.stream.Collectors.toList;
 
@@ -60,6 +70,7 @@ public class Application {
   @PostMapping("/**")
   public String index(@RequestBody ArenaUpdate arenaUpdate) {
     System.out.println(arenaUpdate);
+    writeCommittedStream.send(arenaUpdate.arena);
 
     String myPlayer = getMyPlayer(arenaUpdate);
     int width = arenaUpdate.arena.dims.get(0);
@@ -90,6 +101,19 @@ public class Application {
     int myY = myPlayerState.y;
     String myDirection = myPlayerState.direction;
 
+    if (canThrow(width, height, otherPlayersMap, myX, myY, myDirection)) {
+      return "T";
+    }
+
+    boolean catGoForward = false;
+
+
+    String currentAction = getNextAction();
+
+    return currentAction;
+  }
+
+  private boolean canThrow(int width, int height, String[][] otherPlayersMap, int myX, int myY, String myDirection) {
     boolean canThrow = false;
     if (myDirection == "N") {
       int checkY_1 = myY - 1;
@@ -122,14 +146,7 @@ public class Application {
               || (checkX_2 >= 0 && checkX_2 < width && otherPlayersMap[checkX_2][myY].equals("X"))
               || (checkX_3 >= 0 && checkX_3 < width && otherPlayersMap[checkX_3][myY].equals("X"));
     }
-
-    if (canThrow) {
-      return "T";
-    }
-
-    String currentAction = getNextAction();
-
-    return currentAction;
+    return canThrow;
   }
 
   private String getMyPlayer(ArenaUpdate arenaUpdate) {
@@ -140,6 +157,59 @@ public class Application {
     String[] commands = new String[]{"F", "R", "L"};
     int i = new Random().nextInt(3);
     return commands[i];
+  }
+
+  static class WriteCommittedStream {
+
+    final JsonStreamWriter jsonStreamWriter;
+
+    public WriteCommittedStream(String projectId, String datasetName, String tableName) throws IOException, Descriptors.DescriptorValidationException, InterruptedException {
+
+      try (BigQueryWriteClient client = BigQueryWriteClient.create()) {
+
+        WriteStream stream = WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build();
+        TableName parentTable = TableName.of(projectId, datasetName, tableName);
+        CreateWriteStreamRequest createWriteStreamRequest =
+                CreateWriteStreamRequest.newBuilder()
+                        .setParent(parentTable.toString())
+                        .setWriteStream(stream)
+                        .build();
+
+        WriteStream writeStream = client.createWriteStream(createWriteStreamRequest);
+
+        jsonStreamWriter = JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build();
+      }
+    }
+
+    public ApiFuture<AppendRowsResponse> send(Arena arena) {
+      Instant now = Instant.now();
+      JSONArray jsonArray = new JSONArray();
+
+      arena.state.forEach((url, playerState) -> {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("x", playerState.x);
+        jsonObject.put("y", playerState.y);
+        jsonObject.put("direction", playerState.direction);
+        jsonObject.put("wasHit", playerState.wasHit);
+        jsonObject.put("score", playerState.score);
+        jsonObject.put("player", url);
+        jsonObject.put("timestamp", now.getEpochSecond() * 1000 * 1000);
+        jsonArray.put(jsonObject);
+      });
+
+      return jsonStreamWriter.append(jsonArray);
+    }
+
+  }
+
+  final String projectId = ServiceOptions.getDefaultProjectId();
+  final String datasetName = "snowball";
+  final String tableName = "events";
+
+  final WriteCommittedStream writeCommittedStream;
+
+  public Application() throws Descriptors.DescriptorValidationException, IOException, InterruptedException {
+    writeCommittedStream = new WriteCommittedStream(projectId, datasetName, tableName);
   }
 
 }
